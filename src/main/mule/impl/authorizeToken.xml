@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="authorizeTokenSub_Flow" doc:id="0a6d4b3f-c0c6-4da8-afe0-9f9d59c4a749" >
+		<logger level="INFO" doc:name="authorizeTokenSubFlow start Logger" doc:id="8ea1fd5d-93d9-4dce-80c7-6d5fcbafef0e" message="authorizeTokenSubFlow start Logger" />
+		<ee:transform doc:name="Authorize Data" doc:id="42c64e14-8706-477c-8d5d-336fcbfa5f64" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[{
+    "UserName": "manager",
+    "Password": "welcome",
+    "ForwardingEntityId": "tanishq.com",
+    "ForwardingEntityPassword": "tanishq.com",
+    "TerminalId": "Tanishq-Online-01"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<try doc:name="Try" doc:id="9acd5565-7297-4d7a-96af-8e5e18c58cc9" >
+			<http:request method="POST" doc:name="Authorize Request API" doc:id="0936ba4c-4744-4cd5-9048-d98c6f058a8a" config-ref="HTTPRequestconfig" path="authorize">
+			<http:body><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+    "UserName": payload.UserName,
+    "Password": payload.Password,
+    "ForwardingEntityId": payload.ForwardingEntityId,
+    "ForwardingEntityPassword": payload.ForwardingEntityPassword,
+    "TerminalId": payload.TerminalId
+}]]]></http:body>
+			<http:headers><![CDATA[#[output application/java
+---
+	{
+    "DateAtClient" : now() as DateTime{format: "yyyy-MM-dd'T'HH:MM:ss"} as String
+    }]]]></http:headers>
+		</http:request>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="12baf591-4079-4d35-9903-8476f75ac744" type="HTTP:BAD_REQUEST, HTTP:UNAUTHORIZED" >
+					<logger level="INFO" doc:name="Logger" doc:id="2f9c612f-d02b-4402-a560-51adc8d8d763" message='#[payload]'/>
+					<ee:transform doc:name="Transform Message" doc:id="ee71ef3a-ad65-48ab-aae1-e1addfae6fe6" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: error.exception.errorMessage.typedValue
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="INFO" doc:name="Checking AuthToken payload" doc:id="7151e936-18b0-45fc-bf20-30ac332b8891" message="#[payload]" />
+		<os:store doc:id="b35a16b0-c5e5-4720-ba1b-b570c2dcca34" key="accessToken" objectStore="Object_store" doc:name="Storing AuthToken " >
+		</os:store>
+		<logger level="INFO" doc:name="authorizeTokenSubFlow end Logger" doc:id="7b6404a3-3076-4e8f-97d4-7ec460c0f670" message="authorizeTokenSubFlow end Logger" />
+	</sub-flow>
+</mule>

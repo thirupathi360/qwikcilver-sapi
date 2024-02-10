@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	
+	
+	<sub-flow name="activateSub_Flow" doc:id="1756b9c9-e337-461d-8a9d-0f3e29b32a0a" >
+		<logger level="INFO" doc:name="Activate flow Start " doc:id="e05f372c-38cb-45a5-a2ea-3cb2e30303df" message="*******    Activate flow Start   ******"/>
+		<logger level="INFO" doc:name="Input request payload" doc:id="24e42053-4c52-4edd-909e-9820071275b1" message="#[payload]"/>
+		<ee:transform doc:name="storing request activate Payload in variable" doc:id="3c2ade68-a31b-4c62-af09-b52baea9c79b" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="activateInput" ><![CDATA[payload]]></ee:set-variable>
+			
+</ee:variables>
+		</ee:transform>
+		<os:retrieve doc:name="Retrieving AuthToken" doc:id="750afdf8-ad8d-4f50-be1e-167ea5cde90a" key="accessToken" objectStore="Object_store">
+			<os:default-value><![CDATA[#[payload]]]></os:default-value>
+		</os:retrieve>
+		<choice doc:name="Choice" doc:id="64746747-79f3-4b0b-b99a-060a7bd3f94f" >
+			<when expression="#[isEmpty(payload.AuthToken) or payload.AuthToken == null]">
+				<flow-ref doc:name="Flow Reference" doc:id="5d590ed9-a722-4d4e-b7f4-3099a4aecb81" name="authorizeTokenSub_Flow" />
+				<set-variable value="#[payload.AuthToken]" doc:name="storing AuthToken" doc:id="5b8dfd3f-1c6a-4667-8cef-f4c953a6d66c" variableName="accessTokenActivate" />
+			
+</when>
+			<otherwise >
+				<logger level="INFO" doc:name="checkingAccessToken" doc:id="20e36f2a-4d2c-4fc8-a474-89284ed69d39" message="#[payload]"/>
+				<set-variable value="#[payload.AuthToken]" doc:name="storing AuthToken" doc:id="5c68ce20-953c-4ca9-9d0a-adf723daf6bb" variableName="accessTokenActivate" />
+			
+</otherwise>
+		</choice>
+		<ee:transform doc:name="Sterling mapping to qwikcilver api" doc:id="68a27ea8-ff01-42d9-97a7-ee7d6b3ebf65">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+
+var strCharSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' ++ 'abcdefghijklmnopqrstuvwxyz' ++ '0123456789' ++ '_-_-_-_-'
+var strCharSetLength = sizeOf(strCharSet) - 1
+var intLength = 15
+var randomString = 1 to intLength map strCharSet[randomInt(strCharSetLength)] joinBy ''
+
+---
+{
+  "TransactionTypeId": "305",
+  "Notes": "{ValType~GCACT|Amount~"++ vars.activateInput.Shipments.Shipment.ShipmentLines.ShipmentLine.OrderLine.Extn.TitanGCLineDetailList.TitanGCLineDetail.@Amount++"}",
+  "InputType": "1",
+  "NumberOfCards": "1", 
+  
+  "IdempotencyKey": randomString,
+  "InvoiceNumber": vars.activateInput.Shipments.Shipment.@OrderNo,
+  "InvoiceAmount": vars.activateInput.Shipments.Shipment.ShipmentLines.ShipmentLine.OrderLine.Extn.TitanGCLineDetailList.TitanGCLineDetail.@Amount,
+  "Cards": [
+    {
+      "CardNumber": vars.activateInput.Shipments.Shipment.ShipmentLines.ShipmentLine.OrderLine.Extn.TitanGCLineDetailList.TitanGCLineDetail.@GiftCardNo,
+      "Amount": vars.activateInput.Shipments.Shipment.ShipmentLines.ShipmentLine.OrderLine.Extn.TitanGCLineDetailList.TitanGCLineDetail.@Amount
+    }
+  ]
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Input Rquest to QwikCilver API" doc:id="a253e742-29dc-4519-afdc-d188b0ee0638" message="#[payload]"/>
+		<try doc:name="Try" doc:id="eadef0dd-585f-44a6-b9d6-1c1f74d85601" >
+			<http:request method="POST" doc:name="QwikCilver Request API" doc:id="1a8b8b91-1e8d-4170-92bf-b30c59985a0a" config-ref="HTTPRequestconfig" path="${activate.path}">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ vars.accessTokenActivate,
+	"Content-Type" : "${common.Content-Type}",
+	"DateAtClient" : now() as DateTime{format: "yyyy-MM-dd'T'HH:MM:ss"} as String,
+	"TransactionId" : "${activate.TransactionId}"
+}]]]></http:headers>
+		</http:request>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="4ba76e0a-213b-4b8b-a90e-3c730beebe40" type="HTTP:BAD_REQUEST, HTTP:UNAUTHORIZED">
+					<ee:transform doc:name="Transform Message" doc:id="6b9f2854-7636-4c1f-89df-585d14077bf6" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: error.exception.errorMessage.typedValue
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="INFO" doc:name="QwikCilver Reponse" doc:id="464a7680-6c26-4736-b02b-5efc9faee822" message="#[payload]"/>
+		<ee:transform doc:name="Qwikcilver to oms mapping" doc:id="30ea2102-21f6-4cc1-8095-1f7eb671ae59" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+{
+    XMLNSC:
+    TitanGCLineDetail @(
+ BatchNumber: payload.CurrentBatchNumber, 
+ResponseCode: payload.ResponseCode,
+ResponseMessage: payload.ResponseMessage,
+TransactionId: payload.TransactionId
+
+    ):{}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="OMS mapped payload" doc:id="339fba16-c88e-4101-b9ad-4606d4b33b14" message="#[payload]" />
+		<logger level="INFO" doc:name="Activate flow End " doc:id="f0bce8e6-c4ff-4ef3-9016-77daf4bc49b4" message="*******    Activate flow End  ******"/>
+	
+</sub-flow>
+	
+	</mule>

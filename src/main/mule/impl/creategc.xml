@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	
+	<sub-flow name="creategcSub_Flow" doc:id="2a286adf-7d1e-4a91-a9f4-b00515e2ed51" >
+		<logger level="INFO" doc:name="Creategc Flow Start" doc:id="b3f86606-de45-4263-a9ca-08723734760a" message="*****   Creategc Flow Start    *****"/>
+		<ee:transform doc:name="storing request creategc Payload in variable" doc:id="2203456c-34d7-411d-8803-82e7b0497e94" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="creategcInput" ><![CDATA[payload]]></ee:set-variable>
+			
+</ee:variables>
+		</ee:transform>
+		<os:retrieve doc:name="Retrieving AuthToken" doc:id="5b941399-5557-42bf-93e7-fc394db1ad6e" key="accessToken" objectStore="Object_store">
+			<os:default-value><![CDATA[#[payload]]]></os:default-value>
+		</os:retrieve>
+		<choice doc:name="Choice" doc:id="29efccf7-b369-46de-a76e-7cee80efe850" >
+			<when expression="#[isEmpty(payload.AuthToken) or payload.AuthToken == null]">
+				<flow-ref doc:name="Flow Reference" doc:id="8828dcac-b647-4e1f-a299-afccf5d1dd4f" name="authorizeTokenSub_Flow" />
+				<set-variable value="#[payload.AuthToken]" doc:name="storing AuthToken" doc:id="b7a240c1-ad79-4b23-ac10-86b611d9b842" variableName="accessTokenCreateGC" />
+			
+</when>
+			<otherwise >
+				<logger level="INFO" doc:name="checkingAccessToken" doc:id="8daff6c8-d018-408d-8220-273c70c12e65" message="#[payload]"/>
+				<set-variable value="#[payload.AuthToken]" doc:name="storing AuthToken" doc:id="53bae625-5b30-4bc5-995a-99c7359f52b0" variableName="accessTokenCreateGC" />
+			
+</otherwise>
+		</choice>
+		<ee:transform doc:name="Sterling mapping to qwikcilver api" doc:id="761292ce-51c4-4935-a0e0-02462ddec35f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+
+var strCharSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' ++ 'abcdefghijklmnopqrstuvwxyz' ++ '0123456789' ++ '_-_-_-_-'
+var strCharSetLength = sizeOf(strCharSet) - 1
+var intLength = 15
+var randomString = 1 to intLength map strCharSet[randomInt(strCharSetLength)] joinBy ''
+
+
+---
+{
+  "TransactionTypeId": "305",
+  "InputType": "3",
+  "NumberOfCards": "2",
+  "IdempotencyKey": randomString,
+    "Notes": "{ValType~eGCACT|Amount~"++ vars.creategcInput.Order.OrderLines.OrderLine.LinePriceInfo.@UnitPrice ++"}",
+
+
+  "InvoiceNumber": "TNQ-Test-03", // no key from OMS
+  "InvoiceAmount": vars.creategcInput.Order.OrderLines.OrderLine.LinePriceInfo.@UnitPrice, // no key from OMS
+  "Cards": [
+    {
+      "CardProgramGroupName": vars.creategcInput.Order.@CardProgGrpName,
+      "Amount": vars.creategcInput.Order.OrderLines.OrderLine.LinePriceInfo.@UnitPrice
+    }
+  ],
+  "Purchaser": {
+    "FirstName": vars.creategcInput.Order.PersonInfoBillTo.@FirstName,
+    "LastName": vars.creategcInput.Order.PersonInfoBillTo.@LastName,
+    "Mobile": vars.creategcInput.Order.PersonInfoBillTo.@MobilePhone,
+    "EMailID": vars.creategcInput.Order.PersonInfoBillTo.@EMailID
+  }
+}
+
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Input Request to QwikCilver API" doc:id="265900c5-61cf-49af-88d4-4c55b9e2cf46" message="#[payload]"/>
+		<try doc:name="Try" doc:id="be486a7b-f650-4430-a049-b81da1d28094" >
+			<http:request method="POST" doc:name="QwikCilver Request API" doc:id="f639bf3d-a106-4b13-8753-662bdeb7f6b7" config-ref="HTTPRequestconfig" path="${creategc.path}">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ vars.accessTokenCreateGC,
+	"Content-Type" : "${common.Content-Type}",
+	"DateAtClient" : now() as DateTime{format: "yyyy-MM-dd'T'HH:MM:ss"} as String,
+	"TransactionId" : "${creategc.TransactionId}"
+}]]]></http:headers>
+
+		</http:request>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="8da34f1a-fb12-426e-b8fe-cb62393e058d" type="HTTP:BAD_REQUEST, HTTP:UNAUTHORIZED" >
+					<ee:transform doc:name="Transform Message" doc:id="e8df8f82-6a66-4acc-b992-4a377453afe7" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: error.exception.errorMessage.typedValue
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="INFO" doc:name="QwikCilver Reponse" doc:id="19c91bc7-3aa7-442b-80e1-c355a2e8da57" message="#[payload]"/>
+		<ee:transform doc:name="Qwikcilver to oms mapping" doc:id="238a8852-7443-48ec-b3d6-40991dbbb5f9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+{
+    XMLNSC:
+    TitanGCLineDetail @(
+MerchantName: payload.Cards[0].CardType,
+TransactionDate: payload.Cards[0].TransactionDateTime,
+POSTypeId:"1" ,
+POSEntryMod:"2" ,
+CardNumber: payload.Cards[0].CardNumber,
+CardExpiry: payload.Cards[0].ExpiryDate,
+BatchNumber: payload.CurrentBatchNumber,
+ResponseCode: payload.ResponseCode,
+ResponseMessage: payload.ResponseMessage,
+TransactionId: payload.TransactionId,
+CardPIN: payload.Cards[0].CardPin,
+InvoiceNumber: payload.Cards[0].InvoiceNumber
+    ):{}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="OMS mapped payload" doc:id="c00ccaf0-2282-4ada-ac9a-bd58e88ebaf5" message="#[payload]" />
+		<logger level="INFO" doc:name="Creategc Flow End" doc:id="e8231b45-e551-4e15-8bd3-5b5ff3847607" message="*****   Creategc Flow End  *****"/>
+	
+</sub-flow>
+	
+	</mule>

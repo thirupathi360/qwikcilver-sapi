@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+    
+    <flow name="qwikcilver-sapi-main">
+        <http:listener config-ref="qwikcilver-sapi-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="qwikcilver-sapi-config" />
+		<error-handler ref="globalErrorHandlerError_Handler" />
+    </flow>
+    <flow name="qwikcilver-sapi-console">
+        <http:listener config-ref="qwikcilver-sapi-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="qwikcilver-sapi-config" />
+		<error-handler ref="globalErrorHandlerError_Handler" />
+    </flow>
+    <flow name="post:\activate:application\xml:qwikcilver-sapi-config">
+        <flow-ref doc:name="activateSub_Flow" doc:id="5ef3ba24-833d-4f56-84c4-a60593bf016c" name="activateSub_Flow"/>
+    </flow>
+    <flow name="post:\creategc:application\xml:qwikcilver-sapi-config">
+        <flow-ref doc:name="creategcSub_Flow" doc:id="c4934357-0dcd-4277-a1df-729c91424432" name="creategcSub_Flow"/>
+    </flow>
+    <flow name="post:\deactivate:application\xml:qwikcilver-sapi-config">
+        <flow-ref doc:name="deactivateSub_Flow" doc:id="7802b852-e11f-415e-9ce5-6f1baf3800c8" name="deactivateSub_Flow"/>
+    </flow>
+    <flow name="post:\reload:application\xml:qwikcilver-sapi-config">
+        <flow-ref doc:name="reloadSub_Flow" doc:id="446672df-f5b1-4319-8180-63fd4918f4bf" name="reloadSub_Flow"/>
+    </flow>
+    <flow name="post:\resetpin:application\xml:qwikcilver-sapi-config">
+        <flow-ref doc:name="resetPinSub_Flow" doc:id="0191c602-4173-4ba5-a816-118174be8e21" name="resetPinSub_Flow"/>
+    </flow>
+</mule>

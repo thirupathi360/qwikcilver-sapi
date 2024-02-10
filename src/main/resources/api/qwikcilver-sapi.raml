@@ -1,0 +1,108 @@
+#%RAML 1.0
+title: qwikcilver-sapi
+version: v1
+protocols: [HTTPS]
+
+securitySchemes: 
+  basic:
+    description: |
+      This API supports Basic Authentication.
+    type: Basic Authentication
+traits:
+  errorresponse: !include errorresponse.raml
+ 
+/activate: 
+  securedBy:
+    - basic
+
+  post:
+    body:
+      application/xml:
+        example:
+          !include examples/activaterequest.raml
+    responses:
+      200:
+        body:
+          application/xml:
+            example:
+              !include examples/activateresponse.raml
+    is:
+      - errorresponse
+               
+
+/creategc: 
+  securedBy:
+    - basic
+
+  post:
+    body:
+      application/xml:
+        example:
+          !include examples/creategcrequest.raml
+    responses:
+      200:
+        body:
+          application/xml:
+            example:
+              !include examples/creategcresponse.raml
+    is:
+       - errorresponse          
+      
+ 
+/reload: 
+  securedBy:
+    - basic
+
+  post:
+    body:
+      application/xml:
+        example:
+          !include examples/reloadrequest.raml
+    responses:
+      200:
+        body:
+          application/xml:
+            example:
+              !include examples/reloadresponse.raml
+
+    is:
+      - errorresponse
+
+/deactivate:
+    securedBy:
+      - basic
+
+    post:
+      body:
+        application/xml:
+          example:
+            !include examples/deactivaterequest.raml
+      responses:
+        200:
+          body:
+            application/xml:
+              example:
+                !include examples/deactivateresponse.raml
+
+    is:
+      - errorresponse
+
+/resetpin:
+    securedBy:
+    - basic
+
+    post:
+      body:
+        application/xml:
+          example:
+            !include examples/resetpinrequest.raml
+      responses:
+        200:
+          body:
+            application/xml:
+              example:
+                !include examples/resetpinresponse.raml
+
+      is:
+        - errorresponse
+  
