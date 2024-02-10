@@ -3,10 +3,12 @@
 <mule xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
 	xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
 	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" 
 	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
 http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd
 http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
 	
 	<http:listener-config name="qwikcilver-sapi-httpListenerConfig">
@@ -20,5 +22,7 @@ http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/cu
 		</http:request-connection>
 	</http:request-config>
 	<os:object-store name="Object_store" doc:name="Object store" doc:id="eee59673-e56d-4649-ab75-7e1454ae4bc9" maxEntries="100" entryTtl="2" entryTtlUnit="DAYS" />
-	<configuration-properties doc:name="Configuration properties" doc:id="fe784615-1934-4893-921e-b828f5046c57" file="propertyFiles\DEV-config.yaml" />
+	<configuration-properties doc:name="Configuration properties" doc:id="fe784615-1934-4893-921e-b828f5046c57" file="propertyFiles/${env}-config.yaml" />
+	<api-gateway:autodiscovery apiId="${api.autodiscovery.id}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="d4f7dd85-fdf4-4560-aaad-30ff5d4b0877" flowRef="qwikcilver-sapi-main" />
+	
 </mule>
