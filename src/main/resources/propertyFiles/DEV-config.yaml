@@ -1,0 +1,38 @@
+  
+httpListener:
+  protocol: "HTTP"
+  host: "0.0.0.0"
+  port: "8081"
+  
+  
+common:
+  protocol: "HTTPS"
+  host: "ajf2m0r1na8eau2bn0brcou5h2i0-custuatdev.qwikcilver.com"
+  basePath: "/QwikCilver/XnP/api/v3"
+  Content-Type: "application/json"
+  
+  
+activate:
+  path: "/gc/transactions"
+  TransactionId: "10012"
+  
+  
+creategc:
+  path: "/gc/transactions/cancel"
+  TransactionId : "1013"
+  
+  
+deactivate:
+  path: "/gc/transactions"
+  TransactionId : "1018"
+  
+  
+reload:
+  path: "/gc/transactions/cancel"
+  TransactionId : "1013"
+  
+  
+resetpin:
+  path: "/gc/transactions"
+  TransactionId : "10069"  
+ 

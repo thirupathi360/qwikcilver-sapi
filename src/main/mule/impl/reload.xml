@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<sub-flow name="reloadSub_Flow" doc:id="71563b56-20e7-42b9-9697-59722774c5a4" >
+		<logger level="INFO" doc:name="Reload Flow Start" doc:id="18f6c243-a6ee-48ca-af28-fba831541e93" message="*****    Reload Flow Start   *****"/>
+		<logger level="INFO" doc:name="Input Request from WMS" doc:id="fb7e95d1-b969-400d-a1f9-29c429ed3ad3" message="#[payload]"/>
+		<ee:transform doc:name="storing request reload Payload in variable" doc:id="8c1abefa-ad53-4ff1-a69d-a2c2b3f8467a" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="reloadInput" ><![CDATA[payload]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<os:retrieve doc:name="Retrieving AuthToken" doc:id="d6ef0b98-5fce-47c7-b7cc-8eeaea2a2dad" key="accessToken" objectStore="Object_store">
+			<os:default-value><![CDATA[#[payload]]]></os:default-value>
+		</os:retrieve>
+		<choice doc:name="Choice" doc:id="00d045fc-f3a2-40f6-9954-e83685616b99" >
+			<when expression="#[isEmpty(payload.AuthToken) or payload.AuthToken == null]">
+				<flow-ref doc:name="Flow Reference" doc:id="cc8565e3-ce5c-44c8-b201-60395ceacfc4" name="authorizeTokenSub_Flow" />
+				<set-variable value="#[payload.AuthToken]" doc:name="storing AuthToken" doc:id="ad4d0559-f6d6-43af-8d9d-12d6d02eddf6" variableName="accessTokenReload" />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="checkingAccessToken" doc:id="bb4869c8-a96d-4a7b-85b9-8dbcd0094bd6" message="#[payload]"/>
+				<set-variable value="#[payload.AuthToken]" doc:name="storing AuthToken" doc:id="441d0c05-f220-4429-afed-5c92857efcc7" variableName="accessTokenReload"/>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Sterling mapping to qwikcilver api" doc:id="e781bc3f-13ac-44df-8f40-d1eb7c7e2fd1">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "inputType": "1",
+  "numberOfCards": 1, // need to pass dynamic but no key from oms
+  "Cards": [
+    {
+      "CardNumber": vars.reloadInput.Payment.@CardNumber,
+      "OriginalRequest": {
+        "OriginalBatchNumber": vars.reloadInput.Payment.@OriginalBatchNo,
+        "OriginalTransactionId": vars.reloadInput.Payment.@TransactionId,
+        "OriginalAmount": vars.reloadInput.Payment.@Amount,
+        "OriginalInvoiceNumber": "Test-12345" // no key in input from oms
+      },
+      "Reason": "{ValType~CNL|Amount~"++ vars.reloadInput.Payment.@Amount ++"}"
+    }
+  ]
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Input Request to QwikCilver API" doc:id="8955cd46-66bf-4b1a-b838-ae377f93771f" message="#[payload]"/>
+		<try doc:name="Try" doc:id="cba5b59a-20b5-4bae-b105-72a2723814c8" >
+			<http:request method="POST" doc:name="QwikCilver Request API" doc:id="f862193b-e554-4e09-88f1-5cbe9b1cf6c7" config-ref="HTTPRequestconfig" path="${reload.path}">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ vars.accessTokenReload,
+	"Content-Type" : "${common.Content-Type}",
+	"DateAtClient" : now() as DateTime{format: "yyyy-MM-dd'T'HH:MM:ss"} as String,
+	"TransactionId" : "${reload.TransactionId}"
+}]]]></http:headers>
+		</http:request>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b14304c9-c4ba-46a5-9fb8-27d81de877eb" type="HTTP:BAD_REQUEST, HTTP:UNAUTHORIZED" >
+					<ee:transform doc:name="Transform Message" doc:id="1abb642e-8422-4fbf-baf3-854a50c1cd40" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: error.exception.errorMessage.typedValue
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="INFO" doc:name="QwikCilver Reponse" doc:id="1afcf419-d863-4db1-ae27-84484c08e67d" message="#[payload]" />
+		<ee:transform doc:name="Qwikcilver to oms mapping" doc:id="740e108a-dbea-4586-89f8-ef86789a8a9c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+{
+    XMLNSC:
+    Payment @(
+
+CardNumber: payload.Cards[0].CardNumber,
+CardExpiry: payload.Cards[0].ExpiryDate,
+Amount: payload.TotalAmount,
+RefundTransactionReference: payload.Cards[0].InvoiceNumber,
+ResponseMessage: payload.ResponseMessage,
+TransactionId: payload.TransactionId,
+TransactionType: payload.TransactionTypeId,
+
+  Status:"0" 
+    ):{}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="OMS mapped payload" doc:id="fb15134b-d221-48d5-8400-65994d58f6a6" message="#[payload]"/>
+		<logger level="INFO" doc:name="Reload Flow End" doc:id="3719527f-f9b6-4aa3-80be-d4954b544c79" message="*****  Reload Flow End *****"/>
+	</sub-flow>
+</mule>

@@ -1,0 +1,42 @@
+#%RAML 1.0 Trait
+responses:
+  400:
+    description: Bad Request
+    displayName: Invalid request
+    body:
+      application/json:
+        example: |
+          {
+            "code": "400",
+            "message": "Invalid request format."
+          }
+  401:
+    description: Unauthorized
+    displayName: Authentication required
+    body:
+      application/json:
+        example: |
+          {
+            "code": "401",
+            "message": "Authentication required."
+          }
+
+  404:
+        description: User not found
+        body:
+          application/json:
+            example: |
+              {
+                "code": "404",
+                "message": "User with ID 123 not found."
+              }                  
+  500:
+    description: Internal Server Error
+    displayName: Unexpected error
+    body:
+      application/json:
+        example: |
+          {
+            "code": "500",
+            "message": "An unexpected error occurred. Please try again later."
+          }

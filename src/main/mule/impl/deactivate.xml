@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<sub-flow name="deactivateSub_Flow" doc:id="898faf79-e097-4f59-9c7b-e4bde3408462" >
+		
+		
+		<logger level="INFO" doc:name="Deactivate flow Start " doc:id="9eeec2bd-19ce-4464-b6fa-90f5ad1d192e" message="*******    Deactivate flow Start   ******"/>
+		<logger level="INFO" doc:name="Input request payload" doc:id="d0c0c7b3-4fea-414d-9dd3-8cb0770d11f8" message="#[payload]"/>
+		<ee:transform doc:name="storing request Deactivate Payload in variable" doc:id="9d55122a-d16b-4481-8270-9848370e5a44" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="deactivateInput" ><![CDATA[payload]]></ee:set-variable>
+			
+
+</ee:variables>
+		</ee:transform>
+		<os:retrieve doc:name="Retrieving AuthToken" doc:id="0071a874-3244-4c94-8842-2209b7ffe373" key="accessToken" objectStore="Object_store">
+			<os:default-value><![CDATA[#[payload]]]></os:default-value>
+		</os:retrieve>
+		<choice doc:name="Choice" doc:id="225df343-a188-4c0a-bb3a-724ae0688d17" >
+			<when expression="#[isEmpty(payload.AuthToken) or payload.AuthToken == null]">
+				<flow-ref doc:name="Flow Reference" doc:id="4cc89f4b-6740-45c3-9e11-6ec21726fc56" name="authorizeTokenSub_Flow" />
+				<set-variable value="#[payload.AuthToken]" doc:name="storing AuthToken" doc:id="a993ae49-2e6c-4a5f-9e73-5b9257fb809a" variableName="accessTokenDeactivate" />
+			
+</when>
+			<otherwise >
+				<logger level="INFO" doc:name="checkingAccessToken" doc:id="a7e11e0e-9952-45c6-b39d-6b1f72c52c9a" message="#[payload]"/>
+				<set-variable value="#[payload.AuthToken]" doc:name="storing AuthToken" doc:id="20033616-f295-4f6c-a350-dcc670480ada" variableName="accessTokenDeactivate" />
+			
+</otherwise>
+		</choice>
+		<ee:transform doc:name="Sterling mapping to qwikcilver api" doc:id="b99d7dbd-a9e8-4db0-a885-43b9f0bb0002">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+      "transactionTypeId": "304",
+       "inputType": "1",
+       "notes": "Multi Deactivate Transaction",
+       "Cards": [
+    {
+      "CardNumber": vars.deactivateInput.Shipments.Shipment.ShipmentLines.ShipmentLine.OrderLine.Extn.TitanGCLineDetailList.TitanGCLineDetail.@GiftCardNo
+    }
+  ]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Input Rquest to QwikCilver API" doc:id="7e54a2a6-a97b-48b4-b318-340354ef1ddf" message="#[payload]"/>
+		<try doc:name="Try" doc:id="8a6703ce-7583-43d9-bc0e-ef64f73a8d55" >
+			<http:request method="POST" doc:name="QwikCilver Request API" doc:id="11d75580-6ab6-4f46-83b2-1580e0614c1f" config-ref="HTTPRequestconfig" path="${deactivate.path}">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ vars.accessTokenDeactivate,
+	"Content-Type" : "${common.Content-Type}",
+	"DateAtClient" : now() as DateTime{format: "yyyy-MM-dd'T'HH:MM:ss"} as String,
+	"TransactionId" : "${deactivate.TransactionId}"
+}]]]></http:headers>
+		</http:request>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2a2c68b3-2b81-4d62-ad3c-c416ea42ad07" type="HTTP:BAD_REQUEST, HTTP:UNAUTHORIZED">
+					<ee:transform doc:name="Transform Message" doc:id="7ffff587-22a2-4054-aea6-2786d3473cbb" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: error.exception.errorMessage.typedValue
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="INFO" doc:name="QwikCilver Reponse" doc:id="6aeb6035-8d37-4feb-aced-2bc367c866ff" message="#[payload]"/>
+		<ee:transform doc:name="Qwikcilver to oms mapping" doc:id="5bca64c1-4e66-4e46-8662-ec0a4a0ab008" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+{
+    XMLNSC:
+    TitanGCLineDetail @(
+ BatchNumber: payload.CurrentBatchNumber, 
+ResponseCode: payload.ResponseCode,
+ResponseMessage: payload.ResponseMessage,
+TransactionId: payload.TransactionId
+
+    ):{}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="OMS mapped payload" doc:id="dd74b8f0-5ccc-432d-b8db-54f34ef8980b" message="#[payload]" />
+		<logger level="INFO" doc:name="Deactivate flow End " doc:id="f1f1c0ae-331a-4f06-98a5-ebb288b7456f" message="*******    Deactivate flow End   ******"/>
+	
+	
+	
+	</sub-flow>
+	
+</mule>

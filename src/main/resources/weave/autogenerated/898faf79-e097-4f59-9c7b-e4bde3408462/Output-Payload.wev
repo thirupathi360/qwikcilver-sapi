@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_898faf79_e097_4f59_9c7b_e4bde3408462_Output_Payload = {| XMLNSC: {| TitanGCLineDetail @(BatchNumber: Null {"MetadataFormat": "xml"}, ResponseCode: Null {"MetadataFormat": "xml"}, ResponseMessage: Null {"MetadataFormat": "xml"}, TransactionId: Null {"MetadataFormat": "xml"}): {|  |} |} |}
+
