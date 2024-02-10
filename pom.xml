@@ -66,7 +66,7 @@
 						<target>Cloudhub-US-East-2</target>
 						<muleVersion>4.4.0</muleVersion>
 						<provider>MC</provider>
-						<replicas>1/replicas>
+						<replicas>1</replicas>
 						<vCores>0.1</vCores>
 						<applicationName>qwikcilver-sapi</applicationName>
 						<deploymentTimeout>60</deploymentTimeout>
