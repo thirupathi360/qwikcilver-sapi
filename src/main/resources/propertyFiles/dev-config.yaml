@@ -1,4 +1,5 @@
-  
+autodiscovery:
+  id: "19293510"  
 httpListener:
   protocol: "HTTP"
   host: "0.0.0.0"
