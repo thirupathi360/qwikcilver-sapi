@@ -19,8 +19,8 @@ jobs:
       CH_CONNECTED_APP_ID: "6b3236efad944f9494ecb856ee47a5dd"
       CH_CONNECTED_APP_SECRET: "CCdDEFF92aeA4Db8b6fd898BC38a78BC"
       #SECURE_ENCRYPT_KEY: "${{ secrets.MULE_DEV_SECURE_ENCRYPT_KEY }}"
-      #MULE_NEXUS_REPO_EE_USERNAME: "${{ secrets.MULE_NEXUS_REPO_EE_USERNAME }}"
-      #MULE_NEXUS_REPO_EE_PWD: "${{ secrets.MULE_NEXUS_REPO_EE_PWD }}"
+      MULE_NEXUS_REPO_EE_USERNAME: "Thirupathi"
+      MULE_NEXUS_REPO_EE_PWD: "Tirupati@360"
 
   #This job deploys the application to DEV environment with provided configuration details
   deploy-dev-01:
