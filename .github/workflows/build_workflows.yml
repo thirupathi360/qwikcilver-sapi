@@ -18,7 +18,7 @@ jobs:
       EX_CONNECTED_APP_SECRET: "448821defd55481fB8459f247E0bE07E"
       CH_CONNECTED_APP_ID: "6b3236efad944f9494ecb856ee47a5dd"
       CH_CONNECTED_APP_SECRET: "CCdDEFF92aeA4Db8b6fd898BC38a78BC"
-      #SECURE_ENCRYPT_KEY: "${{ secrets.MULE_DEV_SECURE_ENCRYPT_KEY }}"
+      SECURE_ENCRYPT_KEY: "Thirupathi123456"
       MULE_NEXUS_REPO_EE_USERNAME: "Thirupathi"
       MULE_NEXUS_REPO_EE_PWD: "Tirupati@360"
 
@@ -34,7 +34,7 @@ jobs:
       CLOUDHUB_PRIVATE_SPACE: "${{ vars.MULE_NONPROD_CLOUDHUB_PRIVATE_SPACE }}"
       CLOUDHUB_PUBLIC_URL: "https://qwikcilver-sapi" #Provide the Endpoint URL if custom public endpoint is needed
       GENERATE_PUBLIC_URL_FLAG: "false" #Set to true only if the app has public Endpoint URL; in all other cases this should be false
-      APP_LAYER: ${{ vars.MULE_SYS_API_LAYER }}
+      APP_LAYER: "System"
       #Begin S3 Logging Properties
       #MULE_LOG_S3_FREQUENCY_MIN: "${{ vars.MULE_NONPROD_LOG_S3_FREQUENCY_MIN }}"
       #MULE_LOG_S3_AWS_REGION: "${{ vars.MULE_LOG_S3_AWS_REGION }}"
@@ -50,7 +50,7 @@ jobs:
       MULE_AP_CLIENT_ID: "6b3236efad944f9494ecb856ee47a5dd"
       MULE_AP_CLIENT_SECRET: "CCdDEFF92aeA4Db8b6fd898BC38a78BC"
       TITAN_BIZ_GROUP: "f5b8cc1e-3eb8-45e6-b60a-779668316ef6"
-      #SECURE_ENCRYPT_KEY: "${{ secrets.MULE_DEV_SECURE_ENCRYPT_KEY }}"
+      SECURE_ENCRYPT_KEY: "Thirupathi123456" #"${{ secrets.MULE_DEV_SECURE_ENCRYPT_KEY }}"
       #Begin S3 Logging Properties
       #MULE_AWS_S3_ACCESS_KEY: "${{ secrets.MULE_NONPROD_AWS_S3_ACCESS_KEY }}"
       #MULE_AWS_S3_SECRET_KEY: "${{ secrets.MULE_NONPROD_AWS_S3_SECRET_KEY }}"
