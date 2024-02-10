@@ -24,7 +24,7 @@ jobs:
 
   #This job deploys the application to DEV environment with provided configuration details
   deploy-dev-01:
-    uses: thirupathi360/ms-devops-workflow/.github/workflows/deploy_workflow.yaml@main
+    uses: thirupathi360/ms-devops-workflows/.github/workflows/deploy_workflows.yml@main
     needs: [build-dev-01]
     with:
       CLOUDHUB_ENVIRONMENT: "DEV"
