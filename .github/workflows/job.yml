@@ -1,0 +1,57 @@
+name: DEV - Workflow
+
+#triggers manually, on push, on pull request to DEVELOP branch
+on:
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+
+jobs:
+  #This job builds and publishes the artifact to Exchange and stores backup in GitHub
+  build-dev-01:
+    if: ${{ !contains(github.event.head_commit.message,'Initialize develop') }} #Ignores the run when the repository is created from Template
+    uses: titandigitalecom/ms-devops-workflow/.github/workflows/build_workflows.yaml@main
+    with:
+      GITHUB_ENVIRONMENT: "DEV"
+    secrets:
+      EX_CONNECTED_APP_ID: "256c2f08c8ae4460ab91ee6b12a81f2d"
+      EX_CONNECTED_APP_SECRET: "448821defd55481fB8459f247E0bE07E"
+      CH_CONNECTED_APP_ID: "6b3236efad944f9494ecb856ee47a5dd"
+      CH_CONNECTED_APP_SECRET: "CCdDEFF92aeA4Db8b6fd898BC38a78BC"
+      #SECURE_ENCRYPT_KEY: "${{ secrets.MULE_DEV_SECURE_ENCRYPT_KEY }}"
+      #MULE_NEXUS_REPO_EE_USERNAME: "${{ secrets.MULE_NEXUS_REPO_EE_USERNAME }}"
+      #MULE_NEXUS_REPO_EE_PWD: "${{ secrets.MULE_NEXUS_REPO_EE_PWD }}"
+
+  #This job deploys the application to DEV environment with provided configuration details
+  deploy-dev-01:
+    uses: titandigitalecom/ms-devops-workflow/.github/workflows/deploy_workflow.yaml@main
+    needs: [build-dev-01]
+    with:
+      CLOUDHUB_ENVIRONMENT: "DEV"
+      GITHUB_ENVIRONMENT: "DEV"
+      CLOUDHUB_REPLICAS: "${{ vars.MULE_CLOUDHUB_REPLICAS_1 }}"
+      CLOUDHUB_REPLICA_SIZE: "${{ vars.MULE_CLOUDHUB_REPLICA_SIZE_0_1 }}"
+      CLOUDHUB_PRIVATE_SPACE: "${{ vars.MULE_NONPROD_CLOUDHUB_PRIVATE_SPACE }}"
+      CLOUDHUB_PUBLIC_URL: "https://qwikcilver-sapi" #Provide the Endpoint URL if custom public endpoint is needed
+      GENERATE_PUBLIC_URL_FLAG: "false" #Set to true only if the app has public Endpoint URL; in all other cases this should be false
+      APP_LAYER: ${{ vars.MULE_SYS_API_LAYER }}
+      #Begin S3 Logging Properties
+      #MULE_LOG_S3_FREQUENCY_MIN: "${{ vars.MULE_NONPROD_LOG_S3_FREQUENCY_MIN }}"
+      #MULE_LOG_S3_AWS_REGION: "${{ vars.MULE_LOG_S3_AWS_REGION }}"
+      #MULE_LOG_S3_AWS_BUCKET: "${{ vars.MULE_DEV_LOG_S3_AWS_BUCKET }}"
+      #MULE_LOG_S3_COMPRESS_FLAG: "${{ vars.MULE_LOG_S3_COMPRESS_FLAG }}"
+      #MULE_LOG_S3_STORAGE_CLASS: "${{ vars.MULE_LOG_S3_STORAGE_CLASS }}"
+      #End S3 Logging Properties
+    secrets:
+      EX_CONNECTED_APP_ID: "256c2f08c8ae4460ab91ee6b12a81f2d"
+      EX_CONNECTED_APP_SECRET: "448821defd55481fB8459f247E0bE07E"
+      CH_CONNECTED_APP_ID: "6b3236efad944f9494ecb856ee47a5dd"
+      CH_CONNECTED_APP_SECRET: "CCdDEFF92aeA4Db8b6fd898BC38a78BC"
+      MULE_AP_CLIENT_ID: "6b3236efad944f9494ecb856ee47a5dd"
+      MULE_AP_CLIENT_SECRET: "CCdDEFF92aeA4Db8b6fd898BC38a78BC"
+      TITAN_BIZ_GROUP: "f5b8cc1e-3eb8-45e6-b60a-779668316ef6"
+      #SECURE_ENCRYPT_KEY: "${{ secrets.MULE_DEV_SECURE_ENCRYPT_KEY }}"
+      #Begin S3 Logging Properties
+      #MULE_AWS_S3_ACCESS_KEY: "${{ secrets.MULE_NONPROD_AWS_S3_ACCESS_KEY }}"
+      #MULE_AWS_S3_SECRET_KEY: "${{ secrets.MULE_NONPROD_AWS_S3_SECRET_KEY }}"
+      #End S3 Logging Properties
