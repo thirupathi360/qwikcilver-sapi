@@ -23,6 +23,6 @@ http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/cu
 	</http:request-config>
 	<os:object-store name="Object_store" doc:name="Object store" doc:id="eee59673-e56d-4649-ab75-7e1454ae4bc9" maxEntries="100" entryTtl="2" entryTtlUnit="DAYS" />
 	<configuration-properties doc:name="Configuration properties" doc:id="fe784615-1934-4893-921e-b828f5046c57" file="propertyFiles/${env}-config.yaml" />
-	<api-gateway:autodiscovery apiId="${api.autodiscovery.id}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="d4f7dd85-fdf4-4560-aaad-30ff5d4b0877" flowRef="qwikcilver-sapi-main" />
+	<api-gateway:autodiscovery apiId="${autodiscovery.id}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="d4f7dd85-fdf4-4560-aaad-30ff5d4b0877" flowRef="qwikcilver-sapi-main" />
 	
 </mule>
