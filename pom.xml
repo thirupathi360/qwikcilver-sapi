@@ -61,35 +61,26 @@
 					<classifier>mule-application</classifier>
 					<!--  Cloudhub Deployment - Plugin -->
 				    <cloudhub2Deployment>
-						<businessGroupId>f5b8cc1e-3eb8-45e6-b60a-779668316ef6</businessGroupId>
-						<environment>Sandbox</environment>
-						<target>Cloudhub-US-East-2</target>
-						<muleVersion>4.4.0</muleVersion>
-						<provider>MC</provider>
-						<replicas>1</replicas>
-						<vCores>0.1</vCores>
-						<applicationName>qwikcilver-sapi</applicationName>
-						<deploymentTimeout>60</deploymentTimeout>
-						
-						<properties>
-							<anypoint.platform.config.analytics.agent.enabled>true</anypoint.platform.config.analytics.agent.enabled>
-							<anypoint.platform.visualizer.displayName>QC</anypoint.platform.visualizer.displayName>
-							<!-- api.layer must be set in every concrete Mule app! -->
-							<env>Sandbox</env>
-							<!-- Not supported as secure -->
-							<anypoint.platform.client_id>256c2f08c8ae4460ab91ee6b12a81f2d</anypoint.platform.client_id>
-							<anypoint.platform.client_secret>448821defd55481fB8459f247E0bE07E</anypoint.platform.client_secret>
-							
-							<deployment.name>qwikcilver-system-api</deployment.name>
-						</properties>
-						<integrations>
-							<services>
-								<objectStoreV2>
-									<enabled>${ap.objectstore.enabled}</enabled>
-								</objectStoreV2>
-							</services>
-						</integrations>
-					</cloudhub2Deployment>
+      <uri>https://anypoint.mulesoft.com</uri>
+      <provider>MC</provider>
+      <environment>${environment}</environment>
+      <target>Cloudhub-US-East-2</target>
+      <muleVersion>${mule.version}</muleVersion>
+      <username>${anypoint.username}</username>
+      <password>${anypoint.password}</password>
+      <applicationName>${appName}</applicationName>
+      <replicas>${workers}</replicas>
+      <vCores>${vCore}</vCores>
+      <deploymentSettings>
+        <http>
+          <inbound>
+            <publicUrl>https://user-data-api-1</publicUrl>
+            <forwardSslSession>true</forwardSslSession>
+            <lastMileSecurity>true</lastMileSecurity>
+          </inbound>
+        </http>
+      </deploymentSettings>
+    </cloudhub2Deployment>
 				</configuration>
 			</plugin>
 		</plugins>
