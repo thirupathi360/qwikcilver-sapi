@@ -1,78 +1,58 @@
-# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: Java CI with Maven
 
 on:
- push:
-   branches: ["main"]
- pull_request:
-   branches: ["main"]
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-	key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-      	restore-keys: |
-          ${{ runner.os }}-maven-
-    - name:  Set up JDK 8
-      uses: actions/setup-java@v3
-      with:
-      	java-version:'8'
-       distribution: 'temurin'
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
-    - name: Stamp artifact file name with commit hash
-      run: |
-      	artifactName1=$(ls target/*.jar | head -1)
-        commitHash=$(git rev-parse --short "$GITHUB_SHA")
-	artifactName2=$(ls target/*.jar | head -1 | sed "s/.jar/.$commitHash.jar/g")
- 	mv $artifactName1 $artifactName2
-    - uses: actions/upload-artifact@master
-      with:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+      - name: Stamp artifact file name with commit hash
+        run: |
+          artifactName1=$(ls target/*.jar | head -1)
+          commitHash=$(git rev-parse --short "$GITHUB_SHA")
+          artifactName2=$(ls target/*.jar | head -1 | sed "s/.jar/.$commitHash.jar/g")
+          mv $artifactName1 $artifactName2
+      - uses: actions/upload-artifact@master
+        with:
           name: artifacts
-	  path: target/*.jar
+          path: target/*.jar
 
-   deploy:
-     needs: build
-     runs-on: ubuntu-latest
-     steps:
-     - uses: actions/checkout@v3
-     - uses: actions/cache@v3
-       with:
-	 path: ~/.m2/repository
-  	 key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-    	 restore-keys: |
-      	    ${{ runner.os }}-maven-
-     - uses: actions/download-artifcat@master
-       with:
-           name: artifacts
-     - name: Deploy to Cloudhub Dev env
-       env:
-       	  anypointUsername: ${{ secrets.ANYPOINT_USERNAME }}
-	  anypointPassword: ${{ secrets.ANYPOINT_PASSWORD }}
-       run: |
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - uses: actions/download-artifcat@master
+        with:
+          name: artifacts
+      - name: Deploy to Cloudhub Dev env
+        env:
+          anypointUsername: ${{ secrets.ANYPOINT_USERNAME }}
+          anypointPassword: ${{ secrets.ANYPOINT_PASSWORD }}
+        run: |
           artifactName=$(ls *.jar | head -1)
-	  mvn deploy -DmuleDeploy -Dmule.artifactName -Danypoint.username="$anypointUser" -Danypoint.Password="$anypointPassword" -DworkerType=MICRO -Dregion=us-east-2 Denvironment=Dev -Dcloudhub.application.name=qwikcilver-app-123
-   
-
-
-
-
-
-
-
-
-
-
-
-
+          mvn deploy -DmuleDeploy -Dmule.artifactName -Danypoint.username="$anypointUser" -Danypoint.Password="$anypointPassword" -DworkerType=MICRO -Dregion=us-east-2 Denvironment=Dev -Dcloudhub.application.name=qwikcilver-app-123
